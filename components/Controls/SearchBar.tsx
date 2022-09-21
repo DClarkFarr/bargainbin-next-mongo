@@ -1,8 +1,5 @@
-import {
-    faCircleNotch,
-    faSearch,
-    faTimes,
-} from "@fortawesome/pro-solid-svg-icons";
+import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
+
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ChangeEvent, KeyboardEvent, useState } from "react";
 
@@ -62,7 +59,7 @@ const SearchBar = ({
                                 className="absolute center-v right-3"
                             >
                                 <FontAwesomeIcon
-                                    icon={faTimes}
+                                    icon={solid("times")}
                                     className="cursor-pointer text-gray-400 hover:text-gray-500 text-sm"
                                 />
                             </div>
@@ -78,9 +75,14 @@ const SearchBar = ({
                     >
                         <span className="inline-block leading-none px-2">
                             {searching && (
-                                <FontAwesomeIcon icon={faCircleNotch} spin />
+                                <FontAwesomeIcon
+                                    icon={solid("circle-notch")}
+                                    spin
+                                />
                             )}
-                            {!searching && <FontAwesomeIcon icon={faSearch} />}
+                            {!searching && (
+                                <FontAwesomeIcon icon={solid("search")} />
+                            )}
                         </span>
                     </button>
                 </div>

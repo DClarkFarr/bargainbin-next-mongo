@@ -3,14 +3,8 @@ import Image from "next/image";
 import { useRouter } from "next/router";
 import useUserState from "../../../hooks/useUserState";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-    faBell,
-    faEnvelope,
-    faLock,
-    faPhone,
-    faRightFromBracket,
-    faUser,
-} from "@fortawesome/pro-solid-svg-icons";
+
+import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 
 import { MouseEvent } from "react";
 import SearchBar from "../../Controls/SearchBar";
@@ -126,13 +120,13 @@ const DefaultHeader = () => {
             <div>
                 <IconWithBadge
                     count={3}
-                    icon={<FontAwesomeIcon icon={faBell} />}
+                    icon={<FontAwesomeIcon icon={solid("bell")} />}
                 />
             </div>
             <div>
                 <IconWithBadge
                     count={13}
-                    icon={<FontAwesomeIcon icon={faHeart} />}
+                    icon={<FontAwesomeIcon icon={solid("heart")} />}
                 />
             </div>
             <div>
@@ -140,7 +134,11 @@ const DefaultHeader = () => {
                     <a>
                         <IconWithBadge
                             count={cartItems}
-                            icon={<FontAwesomeIcon icon={faCartShopping} />}
+                            icon={
+                                <FontAwesomeIcon
+                                    icon={solid("cart-shopping")}
+                                />
+                            }
                         />
                     </a>
                 </Link>
@@ -168,7 +166,7 @@ const DefaultHeader = () => {
                                     className="hover:underline"
                                 >
                                     <FontAwesomeIcon
-                                        icon={faEnvelope}
+                                        icon={solid("envelope")}
                                         className="mr-2"
                                     />
                                     <span>support@thecodeframe.com</span>
@@ -180,7 +178,7 @@ const DefaultHeader = () => {
                                     className="hover:underline"
                                 >
                                     <FontAwesomeIcon
-                                        icon={faPhone}
+                                        icon={solid("phone")}
                                         className="mr-2"
                                     />
                                     (435) 817-6657
@@ -197,7 +195,7 @@ const DefaultHeader = () => {
                                             >
                                                 <a>
                                                     <FontAwesomeIcon
-                                                        icon={faLock}
+                                                        icon={solid("lock")}
                                                         className="mr-2"
                                                     />
                                                     My Account
@@ -208,7 +206,9 @@ const DefaultHeader = () => {
                                             <a href="#" onClick={onLogout}>
                                                 <FontAwesomeIcon
                                                     className="mr-2"
-                                                    icon={faRightFromBracket}
+                                                    icon={solid(
+                                                        "right-from-bracket"
+                                                    )}
                                                 />
                                                 Logout
                                             </a>
@@ -217,7 +217,9 @@ const DefaultHeader = () => {
                                 ) : (
                                     <div className="flex gap-x-4">
                                         <div>
-                                            <FontAwesomeIcon icon={faUser} />
+                                            <FontAwesomeIcon
+                                                icon={solid("user")}
+                                            />
                                         </div>
                                         <div>
                                             <Link href="/login" passHref={true}>
