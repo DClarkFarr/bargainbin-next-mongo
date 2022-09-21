@@ -27,7 +27,7 @@ const MetaHead = ({
 
     const translate = (str: string, translations: Record<string, string>) => {
         return Object.entries(translations).reduce((s, [k, v]) => {
-            return s.replace(new RegExp(`[${k}]`, "g"), v);
+            return s.replace(new RegExp(`\\[${k}\\]`, "g"), v);
         }, str);
     };
 
