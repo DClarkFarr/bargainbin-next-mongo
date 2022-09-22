@@ -34,11 +34,13 @@ passport.use(
                 email,
                 password
             );
-            if (user) done(null, user);
-            else
-                done(null, false, {
-                    message: "Email or password is incorrect",
+            if (user) {
+                done(null, user);
+            } else {
+                done({ message: "Email/password not found" }, false, {
+                    message: "Another message",
                 });
+            }
         }
     )
 );

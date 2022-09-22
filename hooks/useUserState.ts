@@ -2,6 +2,7 @@ import create, { StateCreator, StoreApi } from "zustand";
 import createContext from "zustand/context";
 import produce, { Draft } from "immer";
 import { User } from "../types/User";
+import UserService from "services/userService";
 
 export type LoginProps = {
     email: string;
@@ -23,17 +24,25 @@ type UserStoreState = {
 const { Provider: UserStateProvider, useStore: useUserState } =
     createContext<StoreApi<UserStoreState>>();
 
+const userService = new UserService({});
+
 const creatUserStateStore = () =>
     create<UserStoreState>((set, get) => {
         const setter = (fn: (state: UserStoreState) => void) =>
             set(produce(fn));
 
         const login = async ({ email, password }: LoginProps) => {
-            console.log("got login", email, password);
+            const user = await userService.login(email, password);
+            // setter((state) => {
+            //     state.user = user;
+            // });
+            console.log("query got user", user);
         };
 
         const register = async ({ email, password, name }: RegisterProps) => {
-            console.log("got register", email, password, name);
+            const user = await userService.register(name, email, password);
+
+            console.log("got registered user", user);
         };
 
         const logout = async () => {

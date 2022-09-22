@@ -20,10 +20,9 @@ async function createIndexes(client: MongoClient) {
                 { key: { createdAt: -1 } },
                 { key: { postId: -1 } },
             ]),
-        db.collection("users").createIndexes([
-            { key: { email: 1 }, unique: true },
-            { key: { username: 1 }, unique: true },
-        ]),
+        db
+            .collection("users")
+            .createIndexes([{ key: { email: 1 }, unique: true }]),
     ]);
     indexesCreated = true;
     return client;

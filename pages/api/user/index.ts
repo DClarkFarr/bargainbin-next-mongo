@@ -1,6 +1,5 @@
 import { ValidateProps } from "../../../api-lib/constants";
 import {
-    findUserByUsername,
     updateUserById,
     findUserByEmail,
     insertUser,
@@ -8,7 +7,6 @@ import {
 import { auths, validateBody } from "../../../api-lib/middleware";
 import { getMongoDb } from "@/api-lib/mongodb";
 import { ncOpts } from "@/api-lib/nc";
-import { slugUsername } from "@/lib/user";
 import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
 import nc from "next-connect";
@@ -39,7 +37,7 @@ handler.use(...auths);
 handler.get(
     async (req: NextApiRequest & { user: Document }, res: NextApiResponse) => {
         if (!req.user) {
-            return res.status(200).json({ message: "User not found" });
+            return res.json(null);
         }
         return res.json({ user: req.user });
     }
@@ -50,7 +48,6 @@ handler.patch(
     validateBody({
         type: "object",
         properties: {
-            username: ValidateProps.user.username,
             name: ValidateProps.user.name,
             bio: ValidateProps.user.bio,
         },
@@ -77,25 +74,16 @@ handler.patch(
         }
         const { name, bio } = req.body;
 
-        let username;
-
         const reqUser = req.user as Document;
 
-        if (req.body.username) {
-            username = slugUsername(req.body.username);
-            if (
-                username !== reqUser.username &&
-                (await findUserByUsername(db, username))
-            ) {
-                res.status(403).json({
-                    error: { message: "The username has already been taken." },
-                });
-                return;
-            }
+        if (await findUserByEmail(db, req.body.email)) {
+            res.status(403).json({
+                error: { message: "The email has already been taken." },
+            });
+            return;
         }
 
         const user = await updateUserById(db, reqUser._id, {
-            ...(username && { username }),
             ...(name && { name }),
             ...(typeof bio === "string" && { bio }),
             ...(profilePicture && { profilePicture }),
@@ -106,22 +94,20 @@ handler.patch(
 );
 
 handler.post(
-    validateBody({
-        type: "object",
-        properties: {
-            username: ValidateProps.user.username,
-            name: ValidateProps.user.name,
-            password: ValidateProps.user.password,
-            email: ValidateProps.user.email,
-        },
-        required: ["username", "name", "password", "email"],
-        additionalProperties: false,
-    }),
+    // validateBody({
+    //     type: "object",
+    //     properties: {
+    //         name: ValidateProps.user.name,
+    //         password: ValidateProps.user.password,
+    //         email: ValidateProps.user.email,
+    //     },
+    //     required: ["name", "password", "email"],
+    //     additionalProperties: false,
+    // }),
     async (req, res) => {
         const db = await getMongoDb();
 
-        let { username, name, email, password } = req.body;
-        username = slugUsername(req.body.username);
+        let { name, email, password } = req.body;
         email = normalizeEmail(req.body.email);
 
         if (!isEmail(email)) {
@@ -136,18 +122,12 @@ handler.post(
             });
             return;
         }
-        if (await findUserByUsername(db, username)) {
-            res.status(403).json({
-                error: { message: "The username has already been taken." },
-            });
-            return;
-        }
+
         const user = await insertUser(db, {
             email,
             originalPassword: password,
             bio: "",
             name,
-            username,
         });
 
         const r = req as unknown as Express.Request;
@@ -161,10 +141,10 @@ handler.post(
     }
 );
 
-export const config = {
-    api: {
-        bodyParser: false,
-    },
-};
+// export const config = {
+//     api: {
+//         bodyParser: false,
+//     },
+// };
 
 export default handler;

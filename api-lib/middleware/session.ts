@@ -27,5 +27,6 @@ export default async function session(
     next: () => void
 ) {
     await getSession(req, res);
+
     next();
 }

@@ -35,13 +35,6 @@ export async function findUserById(db: Db, userId: string) {
         .then((user) => user || null);
 }
 
-export async function findUserByUsername(db: Db, username: string) {
-    return db
-        .collection("users")
-        .findOne({ username }, { projection: dbProjectionUsers() })
-        .then((user) => user || null);
-}
-
 export async function findUserByEmail(db: Db, email: string) {
     const normEmail = normalizeEmail(email);
     if (!normEmail) {
@@ -82,14 +75,12 @@ export async function insertUser(
         bio = "",
         name,
         profilePicture,
-        username,
     }: {
         email: string;
         originalPassword: string;
         bio?: string;
         name: string;
         profilePicture?: string;
-        username: string;
     }
 ) {
     const user = {
@@ -97,7 +88,6 @@ export async function insertUser(
         profilePicture,
         email,
         name,
-        username,
         bio,
     };
     const password = await bcrypt.hash(originalPassword, 10);
