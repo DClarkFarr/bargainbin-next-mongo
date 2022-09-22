@@ -6,6 +6,7 @@ import { ncOpts } from "@/api-lib/nc";
 import { NextApiRequest, NextApiResponse } from "next";
 import nc from "next-connect";
 import { Document } from "mongodb";
+import { Session } from "next-session/lib/types";
 
 const handler = nc(ncOpts);
 handler.use(...auths);
@@ -20,8 +21,11 @@ handler.put(
         required: ["oldPassword", "newPassword"],
         additionalProperties: false,
     }),
-    async (req: NextApiRequest & Express.Request, res: NextApiResponse) => {
-        const reqUser = req.user as Document;
+    async (
+        req: NextApiRequest & { session: Session },
+        res: NextApiResponse
+    ) => {
+        const reqUser = req.session.user;
         if (!reqUser) {
             res.json(401);
             res.end();

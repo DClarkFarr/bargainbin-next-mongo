@@ -25,7 +25,9 @@ const useRecpatcha = ({ defaultAction = "default" }) => {
     // You can use useEffect to trigger the verification as soon as the component being loaded
     useEffect(() => {
         if (defaultAction && executeRecaptcha) {
-            execute(defaultAction);
+            setTimeout(() => {
+                execute(defaultAction);
+            }, 1000);
         }
     }, [executeRecaptcha, execute, defaultAction]);
 

@@ -3,6 +3,7 @@ import MongoStore from "connect-mongo";
 import nextSession from "next-session";
 import { promisifyStore } from "next-session/lib/compat";
 import { NextApiRequest, NextApiResponse } from "next";
+import { Session } from "next-session/lib/types";
 
 const mongoStore = MongoStore.create({
     clientPromise: getMongoClient(),
@@ -27,6 +28,11 @@ export default async function session(
     next: () => void
 ) {
     await getSession(req, res);
+
+    const r = req as NextApiRequest & { session: Session };
+    r.session.regenerate = async () => {
+        console.log("NOOOOOOOOO");
+    };
 
     next();
 }

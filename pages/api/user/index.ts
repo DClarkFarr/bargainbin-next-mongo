@@ -14,6 +14,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { Document } from "mongodb";
 import normalizeEmail from "validator/lib/normalizeEmail";
 import isEmail from "validator/lib/isEmail";
+import { Session } from "next-session/lib/types";
 
 const upload = multer({ dest: "/tmp" });
 const handler = nc(ncOpts);
@@ -35,11 +36,14 @@ if (process.env.CLOUDINARY_URL) {
 handler.use(...auths);
 
 handler.get(
-    async (req: NextApiRequest & { user: Document }, res: NextApiResponse) => {
-        if (!req.user) {
+    async (
+        req: NextApiRequest & { session: Session },
+        res: NextApiResponse
+    ) => {
+        if (!req.session.user) {
             return res.json(null);
         }
-        return res.json({ user: req.user });
+        return res.json({ user: req.session.user });
     }
 );
 
@@ -54,7 +58,9 @@ handler.patch(
         additionalProperties: true,
     }),
     async (req, res) => {
-        if (!req.user) {
+        const r = req as unknown as NextApiRequest & { session: Session };
+
+        if (!r.session.user) {
             res.status(401).end();
             return;
         }
@@ -74,7 +80,7 @@ handler.patch(
         }
         const { name, bio } = req.body;
 
-        const reqUser = req.user as Document;
+        const reqUser = r.session.user as Document;
 
         if (await findUserByEmail(db, req.body.email)) {
             res.status(403).json({
@@ -93,17 +99,17 @@ handler.patch(
     }
 );
 
-handler.post(
-    // validateBody({
-    //     type: "object",
-    //     properties: {
-    //         name: ValidateProps.user.name,
-    //         password: ValidateProps.user.password,
-    //         email: ValidateProps.user.email,
-    //     },
-    //     required: ["name", "password", "email"],
-    //     additionalProperties: false,
-    // }),
+handler.post<NextApiRequest & { session: Session }>(
+    validateBody({
+        type: "object",
+        properties: {
+            name: ValidateProps.user.name,
+            password: ValidateProps.user.password,
+            email: ValidateProps.user.email,
+        },
+        required: ["name", "password", "email"],
+        additionalProperties: false,
+    }),
     async (req, res) => {
         const db = await getMongoDb();
 
@@ -130,14 +136,9 @@ handler.post(
             name,
         });
 
-        const r = req as unknown as Express.Request;
+        req.session.user = user;
 
-        r.logIn(user, (err) => {
-            if (err) throw err;
-            res.status(201).json({
-                user,
-            });
-        });
+        return res.json({ user });
     }
 );
 

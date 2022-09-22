@@ -25,10 +25,10 @@ const DefaultLayout = ({ children, Header, Footer }: DefaultLayoutProps) => {
         }
     }, [modalsDiv.current]);
 
+    const recaptchaKey = process.env.NEXT_PUBLIC_RECAPTCHA_CLIENT as string;
+
     return (
-        <GoogleReCaptchaProvider
-            reCaptchaKey={process.env.NEXT_PUBLIC_RECAPTCHA_CLIENT || ""}
-        >
+        <GoogleReCaptchaProvider reCaptchaKey={recaptchaKey}>
             <UserStateProvider createStore={creatUserStateStore}>
                 <div className="layout">
                     {Header ? <Header /> : <DefaultHeader />}
