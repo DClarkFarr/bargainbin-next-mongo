@@ -88,7 +88,7 @@ export async function insertUser(
         originalPassword: string;
         bio?: string;
         name: string;
-        profilePicture: string;
+        profilePicture?: string;
         username: string;
     }
 ) {
