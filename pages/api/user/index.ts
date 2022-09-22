@@ -38,7 +38,9 @@ handler.use(...auths);
 
 handler.get(
     async (req: NextApiRequest & { user: Document }, res: NextApiResponse) => {
-        if (!req.user) return res.json({ user: null });
+        if (!req.user) {
+            return res.status(200).json({ message: "User not found" });
+        }
         return res.json({ user: req.user });
     }
 );
@@ -121,6 +123,7 @@ handler.post(
         let { username, name, email, password } = req.body;
         username = slugUsername(req.body.username);
         email = normalizeEmail(req.body.email);
+
         if (!isEmail(email)) {
             res.status(400).json({
                 error: { message: "The email you entered is invalid." },
