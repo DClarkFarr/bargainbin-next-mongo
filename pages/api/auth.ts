@@ -12,6 +12,9 @@ const handler = nc(ncOpts);
 
 handler.use(...auths);
 
+/**
+ * Login
+ */
 handler.post(
     async (req: NextApiRequest & { user: {} } & { session: Session }, res) => {
         const db = await getMongoDb();
@@ -29,6 +32,9 @@ handler.post(
     }
 );
 
+/**
+ * Logout
+ */
 handler.delete(async (req: NextApiRequest & { session: SessionStore }, res) => {
     await req.session.destroy("");
     res.status(204).end();

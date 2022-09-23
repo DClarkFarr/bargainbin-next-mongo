@@ -12,6 +12,9 @@ const handler = nc(ncOpts);
 
 handler.use(...auths);
 
+/**
+ * Send verification email
+ */
 handler.post<NextApiRequest & { session: Session }>(async (req, res) => {
     if (!req.session.user) {
         res.json(401);

@@ -5,6 +5,9 @@ class UserService extends ServerService {
     login(email: string, password: string): Promise<User> {
         return this.client.post("/auth", { email, password });
     }
+    logout(): Promise<void> {
+        return this.client.delete("/auth", {}).then(() => {});
+    }
     register(name: string, email: string, password: string): Promise<User> {
         return this.client.post("/user", { name, email, password });
     }

@@ -1,62 +1,103 @@
-import create, { StateCreator, StoreApi } from "zustand";
-import createContext from "zustand/context";
-import produce, { Draft } from "immer";
+import { useMemo } from "react";
+import { useQuery, useQueryClient } from "react-query";
+import ApiError from "../errors/ApiError";
+import apiClient from "../services/apiClient";
+import UserService from "../services/userService";
 import { User } from "../types/User";
-import UserService from "services/userService";
 
 export type LoginProps = {
+    setErrors: (errors: string[]) => void;
     email: string;
     password: string;
 };
 export type RegisterProps = {
+    setErrors: (errors: string[]) => void;
     email: string;
     password: string;
     name: string;
 };
 
-type UserStoreState = {
-    user: User | null;
-    login: (props: LoginProps) => Promise<void>;
-    logout: () => Promise<void>;
-    register: (props: RegisterProps) => Promise<void>;
-};
-
-const { Provider: UserStateProvider, useStore: useUserState } =
-    createContext<StoreApi<UserStoreState>>();
-
 const userService = new UserService({});
 
-const creatUserStateStore = () =>
-    create<UserStoreState>((set, get) => {
-        const setter = (fn: (state: UserStoreState) => void) =>
-            set(produce(fn));
+const useUserState = () => {
+    const queryClient = useQueryClient();
+    const userService = useMemo(() => new UserService({}), []);
 
-        const login = async ({ email, password }: LoginProps) => {
-            const user = await userService.login(email, password);
-            // setter((state) => {
-            //     state.user = user;
-            // });
-            console.log("query got user", user);
-        };
+    const { data, error, isFetching, refetch } = useQuery(
+        "user",
+        () => {
+            return userService.getAuthedUser();
+        },
+        {
+            refetchOnMount: false,
+            refetchOnWindowFocus: false,
+            retry: false,
+            onError(err: ApiError) {
+                if (err.status === 401) {
+                    return queryClient.setQueryData("user", {
+                        user: null,
+                        favorites: [],
+                    });
+                }
+                throw err;
+            },
+        }
+    );
 
-        const register = async ({ email, password, name }: RegisterProps) => {
-            const user = await userService.register(name, email, password);
+    const login = async ({ setErrors, ...props }: LoginProps) => {
+        setErrors([]);
 
-            console.log("got registered user", user);
-        };
+        return userService
+            .login(props.email, props.password)
+            .then(async () => {
+                await refetch();
+                queryClient.invalidateQueries("cart");
 
-        const logout = async () => {
-            console.log("got logout");
-        };
+                return true;
+            })
+            .catch((error) => {
+                if (error instanceof ApiError) {
+                    setErrors([error.message]);
+                }
+                return false;
+            });
+    };
 
-        return {
-            user: null,
-            login,
-            logout,
-            register,
-        };
-    });
+    const register = async ({
+        setErrors,
+        name,
+        email,
+        password,
+    }: RegisterProps) => {
+        setErrors([]);
+        return userService
+            .register(name, email, password)
+            .then(() => {
+                refetch();
+                return true;
+            })
+            .catch((err: ApiError) => {
+                setErrors([err.message]);
+                return false;
+            });
+    };
 
-export { UserStateProvider, creatUserStateStore };
+    const logout = async () => {
+        await apiClient.post("/logout");
+
+        queryClient.setQueryData("user", { user: null, favorites: [] });
+        queryClient.invalidateQueries("cart");
+    };
+
+    return {
+        user: data?.user || null,
+        login,
+        logout,
+        register,
+        refetch,
+        error,
+        isLoading: isFetching,
+    };
+};
 
 export default useUserState;

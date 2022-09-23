@@ -3,10 +3,6 @@ import { FC } from "../../types/component";
 import DefaultFooter from "./Default/Footer";
 import DefaultHeader from "./Default/Header";
 import useModalState from "../../hooks/useModalState";
-import {
-    creatUserStateStore,
-    UserStateProvider,
-} from "../../hooks/useUserState";
 import { GoogleReCaptchaProvider } from "react-google-recaptcha-v3";
 
 export interface DefaultLayoutProps extends FC {
@@ -29,17 +25,15 @@ const DefaultLayout = ({ children, Header, Footer }: DefaultLayoutProps) => {
 
     return (
         <GoogleReCaptchaProvider reCaptchaKey={recaptchaKey}>
-            <UserStateProvider createStore={creatUserStateStore}>
-                <div className="layout">
-                    {Header ? <Header /> : <DefaultHeader />}
+            <div className="layout">
+                {Header ? <Header /> : <DefaultHeader />}
 
-                    <div className="main">{children}</div>
+                <div className="main">{children}</div>
 
-                    {Footer ? <Footer /> : <DefaultFooter />}
+                {Footer ? <Footer /> : <DefaultFooter />}
 
-                    <div id="modals" ref={modalsDiv}></div>
-                </div>
-            </UserStateProvider>
+                <div id="modals" ref={modalsDiv}></div>
+            </div>
         </GoogleReCaptchaProvider>
     );
 };

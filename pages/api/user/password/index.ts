@@ -11,6 +11,9 @@ import { Session } from "next-session/lib/types";
 const handler = nc(ncOpts);
 handler.use(...auths);
 
+/**
+ * Update user password
+ */
 handler.put(
     validateBody({
         type: "object",

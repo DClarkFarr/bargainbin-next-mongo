@@ -35,6 +35,9 @@ if (process.env.CLOUDINARY_URL) {
 
 handler.use(...auths);
 
+/**
+ * Get current user
+ */
 handler.get(
     async (
         req: NextApiRequest & { session: Session },
@@ -47,6 +50,9 @@ handler.get(
     }
 );
 
+/**
+ * Update user
+ */
 handler.patch(
     upload.single("profilePicture"),
     validateBody({
@@ -99,6 +105,9 @@ handler.patch(
     }
 );
 
+/**
+ * signup
+ */
 handler.post<NextApiRequest & { session: Session }>(
     validateBody({
         type: "object",

@@ -3,15 +3,11 @@ import "../styles/Home.module.scss";
 
 import DefaultLayout from "../components/Layouts/Default";
 import MetaHead from "../components/Layouts/MetaHead";
-import { useCurrentUser } from "@/lib/user";
 
 const Home: NextPage<{
     serverMessage: string;
     staticMessage: string;
 }> = (props) => {
-    const { data: user, error } = useCurrentUser();
-    console.log("got ss", user, error);
-
     return (
         <DefaultLayout>
             <MetaHead title="Home | [base]"></MetaHead>
