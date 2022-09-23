@@ -1,9 +1,8 @@
 import { ValidateProps } from "../../../api-lib/constants";
-import {
-    updateUserById,
-    findUserByEmail,
-    insertUser,
-} from "../../../api-lib/db";
+import UserModel, {
+    UserDocument,
+    UserUpdateable,
+} from "../../../api-lib/db/user";
 import { auths, validateBody } from "../../../api-lib/middleware";
 import { getMongoDb } from "@/api-lib/mongodb";
 import { ncOpts } from "@/api-lib/nc";
@@ -11,7 +10,7 @@ import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
 import nc from "next-connect";
 import { NextApiRequest, NextApiResponse } from "next";
-import { Document } from "mongodb";
+import { Document, WithId } from "mongodb";
 import normalizeEmail from "validator/lib/normalizeEmail";
 import isEmail from "validator/lib/isEmail";
 import { Session } from "next-session/lib/types";
@@ -59,7 +58,6 @@ handler.patch(
         type: "object",
         properties: {
             name: ValidateProps.user.name,
-            bio: ValidateProps.user.bio,
         },
         additionalProperties: true,
     }),
@@ -71,7 +69,7 @@ handler.patch(
             return;
         }
 
-        const db = await getMongoDb();
+        const userModel = await UserModel.factory();
 
         let profilePicture;
         const documentFile = (req as Express.Request).file;
@@ -84,24 +82,22 @@ handler.patch(
             });
             profilePicture = image.secure_url;
         }
-        const { name, bio } = req.body;
 
-        const reqUser = r.session.user as Document;
+        const { name } = req.body;
 
-        if (await findUserByEmail(db, req.body.email)) {
-            res.status(403).json({
-                error: { message: "The email has already been taken." },
-            });
-            return;
+        const reqUser = r.session.user as WithId<UserDocument>;
+
+        const toSet: UserUpdateable = {
+            name,
+            profilePicture,
+        };
+
+        const user = await userModel.updateById(reqUser._id.toString(), toSet);
+        if (user) {
+            res.json({ user: userModel.toArray(user) });
+        } else {
+            res.status(404).json({ message: "User not found" });
         }
-
-        const user = await updateUserById(db, reqUser._id, {
-            ...(name && { name }),
-            ...(typeof bio === "string" && { bio }),
-            ...(profilePicture && { profilePicture }),
-        });
-
-        res.json({ user });
     }
 );
 
@@ -120,10 +116,9 @@ handler.post<NextApiRequest & { session: Session }>(
         additionalProperties: false,
     }),
     async (req, res) => {
-        const db = await getMongoDb();
+        const userModel = await UserModel.factory();
 
         let { name, email, password } = req.body;
-        email = normalizeEmail(req.body.email);
 
         if (!isEmail(email)) {
             res.status(400).json({
@@ -131,17 +126,17 @@ handler.post<NextApiRequest & { session: Session }>(
             });
             return;
         }
-        if (await findUserByEmail(db, email)) {
+
+        if (await userModel.findByEmail(email)) {
             res.status(403).json({
                 error: { message: "The email has already been used." },
             });
             return;
         }
 
-        const user = await insertUser(db, {
+        const user = await userModel.create({
             email,
-            originalPassword: password,
-            bio: "",
+            password,
             name,
         });
 

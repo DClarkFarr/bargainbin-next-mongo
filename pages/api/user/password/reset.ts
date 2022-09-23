@@ -1,15 +1,10 @@
 import { ValidateProps } from "@/api-lib/constants";
-import {
-    createToken,
-    findAndDeleteTokenByIdAndType,
-    findUserByEmail,
-    UNSAFE_updateUserPassword,
-} from "@/api-lib/db";
+import { createToken, findAndDeleteTokenByIdAndType } from "@/api-lib/db";
+import UserModel from "@/api-lib/db/user";
 import { validateBody } from "@/api-lib/middleware";
 import { getMongoDb } from "@/api-lib/mongodb";
 import { ncOpts } from "@/api-lib/nc";
 import nc from "next-connect";
-import normalizeEmail from "validator/lib/normalizeEmail";
 
 const handler = nc(ncOpts);
 
@@ -23,15 +18,10 @@ handler.post(
         additionalProperties: false,
     }),
     async (req, res) => {
+        const userModel = await UserModel.factory();
         const db = await getMongoDb();
 
-        const email = normalizeEmail(req.body.email);
-        if (!email) {
-            res.json({ message: "Failed to normalize email address" });
-            res.status(400).end();
-            return;
-        }
-        const user = await findUserByEmail(db, email);
+        const user = await userModel.findByEmail(req.body.email);
         if (!user) {
             res.status(400).json({
                 error: {
@@ -78,6 +68,7 @@ handler.put(
     }),
     async (req, res) => {
         const db = await getMongoDb();
+        const userModel = await UserModel.factory();
 
         const deletedToken = await findAndDeleteTokenByIdAndType(
             db,
@@ -88,11 +79,12 @@ handler.put(
             res.status(403).end();
             return;
         }
-        await UNSAFE_updateUserPassword(
-            db,
+
+        await userModel.updatePassword(
             deletedToken.creatorId,
             req.body.password
         );
+
         res.status(204).end();
     }
 );

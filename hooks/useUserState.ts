@@ -6,12 +6,10 @@ import UserService from "../services/userService";
 import { User } from "../types/User";
 
 export type LoginProps = {
-    setErrors: (errors: string[]) => void;
     email: string;
     password: string;
 };
 export type RegisterProps = {
-    setErrors: (errors: string[]) => void;
     email: string;
     password: string;
     name: string;
@@ -44,42 +42,20 @@ const useUserState = () => {
         }
     );
 
-    const login = async ({ setErrors, ...props }: LoginProps) => {
-        setErrors([]);
+    const login = async ({ ...props }: LoginProps) => {
+        return userService.login(props.email, props.password).then(async () => {
+            await refetch();
+            queryClient.invalidateQueries("cart");
 
-        return userService
-            .login(props.email, props.password)
-            .then(async () => {
-                await refetch();
-                queryClient.invalidateQueries("cart");
-
-                return true;
-            })
-            .catch((error) => {
-                if (error instanceof ApiError) {
-                    setErrors([error.message]);
-                }
-                return false;
-            });
+            return true;
+        });
     };
 
-    const register = async ({
-        setErrors,
-        name,
-        email,
-        password,
-    }: RegisterProps) => {
-        setErrors([]);
-        return userService
-            .register(name, email, password)
-            .then(() => {
-                refetch();
-                return true;
-            })
-            .catch((err: ApiError) => {
-                setErrors([err.message]);
-                return false;
-            });
+    const register = async ({ name, email, password }: RegisterProps) => {
+        return userService.register(name, email, password).then(() => {
+            refetch();
+            return true;
+        });
     };
 
     const logout = async () => {

@@ -4,9 +4,8 @@ import { ncOpts } from "../../api-lib/nc";
 import nc from "next-connect";
 import { NextApiRequest } from "next";
 import { SessionStore } from "next-session";
-import { getMongoDb } from "@/api-lib/mongodb";
-import { findUserWithEmailAndPassword } from "@/api-lib/db";
 import { Session } from "next-session/lib/types";
+import UserModel from "@/api-lib/db/user";
 
 const handler = nc(ncOpts);
 
@@ -17,18 +16,19 @@ handler.use(...auths);
  */
 handler.post(
     async (req: NextApiRequest & { user: {} } & { session: Session }, res) => {
-        const db = await getMongoDb();
-        const user = await findUserWithEmailAndPassword(
-            db,
+        const userModel = await UserModel.factory();
+
+        const user = await userModel.findWithEmailAndPassword(
             req.body.email,
             req.body.password
         );
 
         if (user) {
             req.session.user = user;
-            console.log("saved user", user);
+            return res.status(200).json({ user });
+        } else {
+            return res.status(404).json({ message: "Email/Password invalid" });
         }
-        return res.status(200).json({ user });
     }
 );
 

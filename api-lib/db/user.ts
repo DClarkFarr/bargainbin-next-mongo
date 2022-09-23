@@ -1,131 +1,217 @@
 import bcrypt from "bcryptjs";
-import { Db, ObjectId } from "mongodb";
+import {
+    Db,
+    ObjectId,
+    Document,
+    WithId,
+    Collection,
+    Filter,
+    FindOptions,
+    FindOneAndUpdateOptions,
+} from "mongodb";
 import normalizeEmail from "validator/lib/normalizeEmail";
+import { getMongoDb } from "../mongodb";
 
-export async function findUserWithEmailAndPassword(
-    db: Db,
-    email: string,
-    password: string
-) {
-    const normEmail = normalizeEmail(email);
-    if (!normEmail) {
-        throw new Error("Failed to normalize email");
+type WithPassword<D extends Document = Document> = D & { password: string };
+
+export interface UserDocument extends Document {
+    name: string;
+    email: string;
+    emailVerified: boolean;
+    profilePicture: string | null;
+}
+
+type UserProjectionPresets = "auth" | "default";
+
+export type UserUpdateable = Partial<
+    Pick<UserDocument, "name" | "profilePicture">
+>;
+
+export type UserCreateable = WithPassword<
+    Pick<UserDocument, "name" | "email">
+> &
+    Partial<Pick<UserDocument, "emailVerified" | "profilePicture">>;
+
+export default class UserModel {
+    collectionName = "users";
+    db: Db;
+    collection: Collection<UserDocument>;
+
+    constructor(db: Db) {
+        this.db = db;
+        this.collection = this.getCollection();
     }
-    const user = await db.collection("users").findOne({ email: normEmail });
-    if (user && (await bcrypt.compare(password, user.password))) {
-        return { ...user, password: undefined }; // filtered out password
+
+    static async factory() {
+        const db = await getMongoDb();
+        return new UserModel(db);
     }
-    return null;
-}
 
-export async function findUserForAuth(db: Db, userId: string) {
-    return db
-        .collection("users")
-        .findOne({ _id: new ObjectId(userId) }, { projection: { password: 0 } })
-        .then((user) => user || null);
-}
-
-export async function findUserById(db: Db, userId: string) {
-    return db
-        .collection("users")
-        .findOne(
-            { _id: new ObjectId(userId) },
-            { projection: dbProjectionUsers() }
-        )
-        .then((user) => user || null);
-}
-
-export async function findUserByEmail(db: Db, email: string) {
-    const normEmail = normalizeEmail(email);
-    if (!normEmail) {
-        throw new Error("Failed to normalize email");
+    getCollection() {
+        return this.db.collection<UserDocument>(this.collectionName);
     }
-    return db
-        .collection("users")
-        .findOne({ email: normEmail }, { projection: dbProjectionUsers() })
-        .then((user) => user || null);
-}
 
-export async function updateUserById(
-    db: Db,
-    id: string,
-    data:
-        | Readonly<
-              {
-                  [x: string]: unknown;
-              } & {} & {}
-          >
-        | undefined
-) {
-    return db
-        .collection("users")
-        .findOneAndUpdate(
+    getProjection(
+        obj: FindOptions["projection"] = {},
+        preset?: UserProjectionPresets
+    ) {
+        if (preset) {
+            switch (preset) {
+                case "auth":
+                    obj = {
+                        ...obj,
+                        password: 1,
+                    };
+                    break;
+                default:
+                    obj = {
+                        ...obj,
+                        password: 0,
+                    };
+                    break;
+            }
+        }
+
+        return obj;
+    }
+
+    getFindOptions(
+        options: FindOptions<UserDocument> & {
+            preset?: UserProjectionPresets;
+        } = {}
+    ) {
+        options.projection = this.getProjection(
+            options.projection,
+            options.preset
+        );
+
+        return options;
+    }
+
+    toArray(d: WithId<Document>) {
+        const obj = { ...d };
+
+        delete obj.password;
+
+        return obj as WithId<UserDocument>;
+    }
+
+    async findOne(
+        filter: Filter<UserDocument>,
+        options: FindOptions<UserDocument> & {
+            preset?: UserProjectionPresets;
+        } = {}
+    ) {
+        return this.collection.findOne(filter, this.getFindOptions(options));
+    }
+
+    async findByEmail(
+        email: string,
+        options: FindOptions<UserDocument> & {
+            preset?: UserProjectionPresets;
+        } = {}
+    ) {
+        const normEmail = normalizeEmail(email);
+
+        if (!normEmail) {
+            throw new Error("Failed to normalize email");
+        }
+        return this.findOne({ email: normEmail }, options);
+    }
+
+    async findWithEmailAndPassword(email: string, password: string) {
+        const user = (await this.findByEmail(email, {
+            preset: "auth",
+        })) as WithPassword<WithId<UserDocument>>;
+
+        if (user && (await bcrypt.compare(password, user.password))) {
+            return this.toArray(user); // filtered out password
+        }
+        return null;
+    }
+
+    async findById(
+        userId: string,
+        options: FindOptions<UserDocument> & {
+            preset?: UserProjectionPresets;
+        } = {}
+    ) {
+        return this.findOne({ _id: new ObjectId(userId) }, options);
+    }
+
+    async updateById(
+        id: string,
+        data: UserUpdateable,
+        options: FindOneAndUpdateOptions = { returnDocument: "after" }
+    ) {
+        return this.collection
+            .findOneAndUpdate(
+                { _id: new ObjectId(id) },
+                { $set: data },
+                {
+                    ...options,
+                    projection: this.getProjection(options.projection),
+                }
+            )
+            .then(({ value }) => value);
+    }
+
+    async create({
+        email,
+        password: originalPassword,
+        name,
+        profilePicture = null,
+        emailVerified = false,
+    }: UserCreateable): Promise<WithId<UserDocument>> {
+        const emailNorm = normalizeEmail(email);
+        if (!emailNorm) {
+            throw new Error("Failed to normalize email");
+        }
+
+        const password = await bcrypt.hash(originalPassword, 10);
+
+        const toSet = {
+            email: emailNorm,
+            name,
+            password,
+            profilePicture,
+            emailVerified,
+        };
+
+        const { insertedId } = await this.collection.insertOne(toSet);
+
+        return this.toArray({
+            ...toSet,
+            _id: insertedId,
+        });
+    }
+    async updatePasswordByOldPassword(
+        id: string,
+        oldPassword: string,
+        newPassword: string
+    ) {
+        const user = await this.findOne(new ObjectId(id));
+        if (!user) return false;
+
+        const matched = await bcrypt.compare(oldPassword, user.password);
+        if (!matched) return false;
+
+        const password = await bcrypt.hash(newPassword, 10);
+        await this.collection.updateOne(
             { _id: new ObjectId(id) },
-            { $set: data },
-            { returnDocument: "after", projection: { password: 0 } }
-        )
-        .then(({ value }) => value);
-}
+            { $set: { password } }
+        );
 
-export async function insertUser(
-    db: Db,
-    {
-        email,
-        originalPassword,
-        bio = "",
-        name,
-        profilePicture,
-    }: {
-        email: string;
-        originalPassword: string;
-        bio?: string;
-        name: string;
-        profilePicture?: string;
+        return true;
     }
-) {
-    const user = {
-        emailVerified: false,
-        profilePicture,
-        email,
-        name,
-        bio,
-    };
-    const password = await bcrypt.hash(originalPassword, 10);
-    const { insertedId } = await db
-        .collection("users")
-        .insertOne({ ...user, password });
-    return {
-        ...user,
-        _id: insertedId,
-    };
-}
 
-export async function updateUserPasswordByOldPassword(
-    db: Db,
-    id: string,
-    oldPassword: string,
-    newPassword: string
-) {
-    const user = await db.collection("users").findOne(new ObjectId(id));
-    if (!user) return false;
-    const matched = await bcrypt.compare(oldPassword, user.password);
-    if (!matched) return false;
-    const password = await bcrypt.hash(newPassword, 10);
-    await db
-        .collection("users")
-        .updateOne({ _id: new ObjectId(id) }, { $set: { password } });
-    return true;
-}
-
-export async function UNSAFE_updateUserPassword(
-    db: Db,
-    id: string,
-    newPassword: string
-) {
-    const password = await bcrypt.hash(newPassword, 10);
-    await db
-        .collection("users")
-        .updateOne({ _id: new ObjectId(id) }, { $set: { password } });
+    async updatePassword(id: string, newPassword: string) {
+        const password = await bcrypt.hash(newPassword, 10);
+        await this.collection.updateOne(
+            { _id: new ObjectId(id) },
+            { $set: { password } }
+        );
+    }
 }
 
 export function dbProjectionUsers(prefix = "") {

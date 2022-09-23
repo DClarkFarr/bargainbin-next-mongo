@@ -1,6 +1,7 @@
-export type User<R = "user" | "admin"> = {
+export type User = {
     id: number;
     name: string;
     email: string;
-    role: R;
+    emailVerified: boolean;
+    profilePicture: string;
 };

@@ -50,7 +50,7 @@ const LoginPanel = ({
             })
             .catch((err) => {
                 if (err instanceof Error) {
-                    console.warn("caught error", err);
+                    setErrors([err.message]);
                 }
             })
             .finally(() => {
