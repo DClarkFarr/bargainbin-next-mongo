@@ -4,7 +4,6 @@ import UserModel, {
     UserUpdateable,
 } from "../../../api-lib/db/userModel";
 import { auths, validateBody } from "../../../api-lib/middleware";
-import { getMongoDb } from "@/api-lib/mongodb";
 import { ncOpts } from "@/api-lib/nc";
 import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
