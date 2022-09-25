@@ -2,7 +2,7 @@ import { ValidateProps } from "../../../api-lib/constants";
 import UserModel, {
     UserDocument,
     UserUpdateable,
-} from "../../../api-lib/db/user";
+} from "../../../api-lib/db/userModel";
 import { auths, validateBody } from "../../../api-lib/middleware";
 import { getMongoDb } from "@/api-lib/mongodb";
 import { ncOpts } from "@/api-lib/nc";
@@ -10,8 +10,7 @@ import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
 import nc from "next-connect";
 import { NextApiRequest, NextApiResponse } from "next";
-import { Document, WithId } from "mongodb";
-import normalizeEmail from "validator/lib/normalizeEmail";
+import { WithId } from "mongodb";
 import isEmail from "validator/lib/isEmail";
 import { Session } from "next-session/lib/types";
 

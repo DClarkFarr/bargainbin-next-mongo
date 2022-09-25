@@ -1,6 +1,6 @@
 import { ValidateProps } from "@/api-lib/constants";
 import { createToken, findAndDeleteTokenByIdAndType } from "@/api-lib/db";
-import UserModel from "@/api-lib/db/user";
+import UserModel from "@/api-lib/db/userModel";
 import { validateBody } from "@/api-lib/middleware";
 import { getMongoDb } from "@/api-lib/mongodb";
 import { ncOpts } from "@/api-lib/nc";

@@ -1,16 +1,14 @@
 import bcrypt from "bcryptjs";
 import {
-    Db,
     ObjectId,
     Document,
     WithId,
-    Collection,
-    Filter,
     FindOptions,
     FindOneAndUpdateOptions,
 } from "mongodb";
 import normalizeEmail from "validator/lib/normalizeEmail";
 import { getMongoDb } from "../mongodb";
+import BaseModel from "./baseModel";
 
 type WithPassword<D extends Document = Document> = D & { password: string };
 
@@ -32,23 +30,16 @@ export type UserCreateable = WithPassword<
 > &
     Partial<Pick<UserDocument, "emailVerified" | "profilePicture">>;
 
-export default class UserModel {
+class UserModel extends BaseModel<
+    UserDocument,
+    UserProjectionPresets,
+    UserUpdateable
+> {
     collectionName = "users";
-    db: Db;
-    collection: Collection<UserDocument>;
-
-    constructor(db: Db) {
-        this.db = db;
-        this.collection = this.getCollection();
-    }
 
     static async factory() {
         const db = await getMongoDb();
-        return new UserModel(db);
-    }
-
-    getCollection() {
-        return this.db.collection<UserDocument>(this.collectionName);
+        return new this(db);
     }
 
     getProjection(
@@ -75,36 +66,6 @@ export default class UserModel {
         return obj;
     }
 
-    getFindOptions(
-        options: FindOptions<UserDocument> & {
-            preset?: UserProjectionPresets;
-        } = {}
-    ) {
-        options.projection = this.getProjection(
-            options.projection,
-            options.preset
-        );
-
-        return options;
-    }
-
-    toArray(d: WithId<Document>) {
-        const obj = { ...d };
-
-        delete obj.password;
-
-        return obj as WithId<UserDocument>;
-    }
-
-    async findOne(
-        filter: Filter<UserDocument>,
-        options: FindOptions<UserDocument> & {
-            preset?: UserProjectionPresets;
-        } = {}
-    ) {
-        return this.collection.findOne(filter, this.getFindOptions(options));
-    }
-
     async findByEmail(
         email: string,
         options: FindOptions<UserDocument> & {
@@ -128,32 +89,6 @@ export default class UserModel {
             return this.toArray(user); // filtered out password
         }
         return null;
-    }
-
-    async findById(
-        userId: string,
-        options: FindOptions<UserDocument> & {
-            preset?: UserProjectionPresets;
-        } = {}
-    ) {
-        return this.findOne({ _id: new ObjectId(userId) }, options);
-    }
-
-    async updateById(
-        id: string,
-        data: UserUpdateable,
-        options: FindOneAndUpdateOptions = { returnDocument: "after" }
-    ) {
-        return this.collection
-            .findOneAndUpdate(
-                { _id: new ObjectId(id) },
-                { $set: data },
-                {
-                    ...options,
-                    projection: this.getProjection(options.projection),
-                }
-            )
-            .then(({ value }) => value);
     }
 
     async create({
@@ -185,6 +120,7 @@ export default class UserModel {
             _id: insertedId,
         });
     }
+
     async updatePasswordByOldPassword(
         id: string,
         oldPassword: string,
@@ -213,6 +149,8 @@ export default class UserModel {
         );
     }
 }
+
+export default UserModel;
 
 export function dbProjectionUsers(prefix = "") {
     return {

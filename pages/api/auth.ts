@@ -5,7 +5,7 @@ import nc from "next-connect";
 import { NextApiRequest } from "next";
 import { SessionStore } from "next-session";
 import { Session } from "next-session/lib/types";
-import UserModel from "@/api-lib/db/user";
+import UserModel from "@/api-lib/db/userModel";
 
 const handler = nc(ncOpts);
 

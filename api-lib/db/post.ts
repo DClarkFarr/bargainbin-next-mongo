@@ -1,5 +1,5 @@
 import { Db, ObjectId } from "mongodb";
-import { dbProjectionUsers } from "./user";
+import { dbProjectionUsers } from "./userModel";
 
 export async function findPostById(db: Db, id: string) {
     const posts = await db
