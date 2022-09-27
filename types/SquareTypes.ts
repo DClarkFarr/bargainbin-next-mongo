@@ -19,3 +19,10 @@ export type SquareItem = {
     imageIds: string[];
     productType: string;
 };
+
+export type SquareImage = {
+    id: string;
+    name: string;
+    url: string;
+    updatedAt: string;
+};

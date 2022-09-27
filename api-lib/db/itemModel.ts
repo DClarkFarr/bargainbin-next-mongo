@@ -1,4 +1,5 @@
 import { Db, Document, FindOptions } from "mongodb";
+import { SquareImage } from "types/SquareTypes";
 import { getMongoDb } from "../mongodb";
 import BaseModel from "./baseModel";
 
@@ -15,17 +16,18 @@ export interface ItemDocument {
     sku: string;
     productType: string;
     imageIds: string[];
-    images: {
-        url: string;
-        default: boolean;
-    }[];
     createdAt: Date;
     syncedAt: Date;
 }
 
 type ItemProjectionPresets = "default";
 
-export type ItemUpdateable = Omit<ItemDocument, "createdAt">;
+export type ItemUpdateable = Omit<ItemDocument, "createdAt" | "images">;
+export type ItemUpdateableWithImages = ItemUpdateable & {
+    images: SquareImage[];
+};
+
+export type WithImages = ItemDocument & { images: SquareImage[] };
 
 export default class ItemModel extends BaseModel<
     ItemDocument,

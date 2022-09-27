@@ -1,20 +1,50 @@
-import { SquareCategory, SquareItem } from "../../types/SquareTypes";
-import ItemModel, { ItemDocument, ItemUpdateable } from "../db/itemModel";
+import {
+    SquareCategory,
+    SquareImage,
+    SquareItem,
+} from "../../types/SquareTypes";
+import ItemModel, {
+    ItemDocument,
+    ItemUpdateable,
+    ItemUpdateableWithImages,
+} from "../db/itemModel";
 import { DateTime } from "luxon";
 
 import squareClient from "@/api-lib/squareClient";
-import { ApiError, CatalogObject, ListCatalogResponse } from "square";
+import {
+    ApiError,
+    CatalogImage,
+    CatalogObject,
+    ListCatalogResponse,
+} from "square";
 import { toSlug } from "methods/url";
+
+import { keyBy } from "lodash";
 
 export default class SquareService {
     async fetchCatalogObjects() {
         const catalogApi = squareClient.catalogApi;
 
-        let response: ListCatalogResponse = { objects: [] };
+        let objects: Required<ListCatalogResponse>["objects"] = [];
 
         try {
-            const { result } = await catalogApi.listCatalog();
-            response = result;
+            let { result } = await catalogApi.listCatalog(
+                undefined,
+                "ITEM,CATEGORY,IMAGE"
+            );
+
+            objects.push(...(result.objects || []));
+
+            while (result.cursor) {
+                console.log("querying cursor", result.cursor);
+                result = (
+                    await catalogApi.listCatalog(
+                        result.cursor,
+                        "ITEM,CATEGORY,IMAGE"
+                    )
+                ).result;
+                objects.push(...(result.objects || []));
+            }
         } catch (error) {
             if (error instanceof ApiError) {
                 const errors = error.result;
@@ -23,38 +53,52 @@ export default class SquareService {
             }
         }
 
-        return response.objects || [];
+        return objects;
     }
 
     mapCatalogObjects(objects: Required<ListCatalogResponse>["objects"]) {
         const categories: SquareCategory[] = [];
         const items: SquareItem[] = [];
+        const images: SquareImage[] = [];
         const others: CatalogObject[] = [];
 
         objects?.forEach((item) => {
-            if (
-                item.type === "CATEGORY" &&
-                item?.categoryData?.name &&
-                !item.isDeleted
-            ) {
+            if (item.type === "CATEGORY") {
+                if (!(item?.categoryData?.name && !item.isDeleted)) {
+                    return;
+                }
                 categories.push({
                     id: item.id,
                     slug: toSlug(item.categoryData.name),
                     name: item.categoryData.name,
                     updatedAt: item.updatedAt as string,
                 });
-            } else if (item.type === "ITEM" && !item.isDeleted) {
+            } else if (item.type === "ITEM") {
+                if (
+                    !(
+                        !item.isDeleted &&
+                        item?.itemData?.productType === "REGULAR"
+                    )
+                ) {
+                    return;
+                }
                 item.itemData?.variations?.forEach((variation) => {
                     const amount = Number(
                         variation.itemVariationData?.priceMoney?.amount || 0
                     );
 
+                    const vname = variation.itemVariationData?.name || "";
+
+                    const name = `${item.itemData?.name as string}${
+                        vname ? ` - ${vname}` : ""
+                    }`;
+
                     items.push({
                         itemId: item.id,
                         variationId: variation.id,
                         updatedAt: item.updatedAt || "",
-                        name: item.itemData?.name || "",
-                        slug: toSlug(item.itemData?.name || ""),
+                        name,
+                        slug: toSlug(name),
                         description: item.itemData?.description || "",
                         descriptionHtml: item.itemData?.descriptionHtml || "",
                         categoryId: item.itemData?.categoryId || "",
@@ -66,6 +110,16 @@ export default class SquareService {
                         productType: item.itemData?.productType || "",
                     });
                 });
+            } else if (item.type === "IMAGE") {
+                if (!(item.imageData?.url && !item.isDeleted)) {
+                    return;
+                }
+                images.push({
+                    id: item.id,
+                    name: item.imageData?.name || "",
+                    url: item.imageData?.url || "",
+                    updatedAt: item.updatedAt || "",
+                });
             } else {
                 others.push(item);
             }
@@ -74,6 +128,7 @@ export default class SquareService {
         return {
             items,
             categories,
+            images,
             others,
         };
     }
@@ -81,9 +136,10 @@ export default class SquareService {
     async syncCatalog() {
         const objects = await this.fetchCatalogObjects();
 
-        const { categories, items, others } = this.mapCatalogObjects(objects);
+        const { categories, items, others, images } =
+            this.mapCatalogObjects(objects);
 
-        const itemResults = await this.syncItems(items);
+        const itemResults = await this.syncItems(items, images);
 
         return {
             items: itemResults,
@@ -91,7 +147,11 @@ export default class SquareService {
         };
     }
 
-    async syncItems(items: SquareItem[]) {
+    async syncItems(items: SquareItem[], images: SquareImage[]) {
+        const keyedImages = keyBy(images, "id");
+
+        console.log("image id keys", Object.keys(keyedImages));
+
         const results: {
             variationId: string;
             name: string;
@@ -106,7 +166,7 @@ export default class SquareService {
                 item.variationId
             );
 
-            const toSet: ItemUpdateable = {
+            let toSet: ItemUpdateable = {
                 itemId: item.itemId,
                 variationId: item.variationId,
                 squareUpdatedAt: DateTime.fromISO(item.updatedAt).toJSDate(),
@@ -119,11 +179,30 @@ export default class SquareService {
                 sku: item.sku,
                 productType: item.productType,
                 imageIds: item.imageIds,
-                images: [],
                 syncedAt: DateTime.now().toJSDate(),
             };
 
+            console.log("existing", !!existingItem);
             if (existingItem) {
+                if (
+                    item.imageIds.join(",") !== existingItem.imageIds.join(",")
+                ) {
+                    toSet.imageIds = item.imageIds;
+
+                    const images = item.imageIds.reduce((acc, id) => {
+                        if (keyedImages[id]) {
+                            acc.push(keyedImages[id]);
+                        }
+                        return acc;
+                    }, [] as SquareImage[]);
+
+                    console.log("got", item.imageIds, "from", images);
+
+                    toSet = {
+                        ...toSet,
+                        images,
+                    } as ItemUpdateableWithImages;
+                }
                 await itemModel.collection.updateOne(
                     {
                         _id: existingItem._id,
@@ -139,7 +218,21 @@ export default class SquareService {
                 });
             } else {
                 try {
-                    const created = await itemModel.collection.insertOne({
+                    toSet.imageIds = item.imageIds;
+
+                    const images = item.imageIds.reduce((acc, id) => {
+                        if (keyedImages[id]) {
+                            acc.push(keyedImages[id]);
+                        }
+                        return acc;
+                    }, [] as SquareImage[]);
+
+                    toSet = {
+                        ...toSet,
+                        images,
+                    } as ItemUpdateableWithImages;
+
+                    await itemModel.collection.insertOne({
                         ...toSet,
                         createdAt: DateTime.now().toJSDate(),
                     });
