@@ -14,7 +14,7 @@ export default class BaseModel<
     P extends string,
     U extends Document
 > {
-    collectionName: string = "default";
+    collectionName = "default";
     db: Db;
     collection: Collection<D>;
 
@@ -24,6 +24,7 @@ export default class BaseModel<
     }
 
     getCollection() {
+        console.log("getting collection", this.collectionName, "from", this);
         return this.db.collection<D>(this.collectionName);
     }
 
@@ -59,7 +60,10 @@ export default class BaseModel<
             preset?: P;
         } = {}
     ) {
-        return this.collection.findOne<D>(filter, this.getFindOptions(options));
+        return this.collection.findOne<WithId<D>>(
+            filter,
+            this.getFindOptions(options)
+        );
     }
 
     async findById(

@@ -1,11 +1,5 @@
 import bcrypt from "bcryptjs";
-import {
-    ObjectId,
-    Document,
-    WithId,
-    FindOptions,
-    FindOneAndUpdateOptions,
-} from "mongodb";
+import { ObjectId, Document, WithId, FindOptions, Db } from "mongodb";
 import normalizeEmail from "validator/lib/normalizeEmail";
 import { getMongoDb } from "../mongodb";
 import BaseModel from "./baseModel";
@@ -35,7 +29,11 @@ class UserModel extends BaseModel<
     UserProjectionPresets,
     UserUpdateable
 > {
-    collectionName = "users";
+    constructor(db: Db) {
+        super(db);
+        this.collectionName = "users";
+        this.collection = this.getCollection();
+    }
 
     static async factory() {
         const db = await getMongoDb();

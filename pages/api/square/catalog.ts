@@ -4,33 +4,13 @@ import { NextApiRequest, NextApiResponse } from "next";
 import squareClient from "@/api-lib/squareClient";
 import { ApiError, CatalogObject, ListCatalogResponse } from "square";
 import { toSlug } from "methods/url";
+import { SquareCategory, SquareItem } from "types/SquareTypes";
+import SquareService from "@/api-lib/services/SquareService";
 
 (BigInt.prototype as any).toJSON = function () {
     return this.toString();
 };
 const handler = nc(ncOpts);
-
-type SquareCategory = {
-    id: string;
-    name: string;
-    slug: string;
-    updatedAt: string;
-};
-
-type SquareItem = {
-    itemId: string;
-    variationId: string;
-    updatedAt: string;
-    name: string;
-    slug: string;
-    description: string;
-    descriptionHtml: string;
-    categoryId: string;
-    price: number;
-    sku: string;
-    imageIds: string[];
-    productType: string;
-};
 
 /*
 {
@@ -87,64 +67,13 @@ type SquareItem = {
     }
 }
 */
+
 handler.get(async (req: NextApiRequest, res: NextApiResponse) => {
-    const catalogApi = squareClient.catalogApi;
+    const squareService = new SquareService();
+    const objects = await squareService.fetchCatalogObjects();
 
-    let response: ListCatalogResponse = { objects: [] };
-
-    try {
-        const { result, ...httpResponse } = await catalogApi.listCatalog();
-        response = result;
-    } catch (error) {
-        if (error instanceof ApiError) {
-            const errors = error.result;
-            console.log("error loading catalog", errors);
-            // const { statusCode, headers } = error;
-        }
-    }
-
-    const categories: SquareCategory[] = [];
-    const items: SquareItem[] = [];
-    const others: CatalogObject[] = [];
-
-    response.objects?.forEach((item) => {
-        if (
-            item.type === "CATEGORY" &&
-            item?.categoryData?.name &&
-            !item.isDeleted
-        ) {
-            categories.push({
-                id: item.id,
-                slug: toSlug(item.categoryData.name),
-                name: item.categoryData.name,
-                updatedAt: item.updatedAt as string,
-            });
-        } else if (item.type === "ITEM" && !item.isDeleted) {
-            item.itemData?.variations?.forEach((variation) => {
-                const amount = (variation.itemVariationData?.priceMoney
-                    ?.amount || 0) as number;
-
-                items.push({
-                    itemId: item.id,
-                    variationId: variation.id,
-                    updatedAt: item.updatedAt || "",
-                    name: item.itemData?.name || "",
-                    slug: toSlug(item.itemData?.name || ""),
-                    description: item.itemData?.description || "",
-                    descriptionHtml: item.itemData?.descriptionHtml || "",
-                    categoryId: item.itemData?.categoryId || "",
-                    price: amount,
-                    sku:
-                        item.itemData?.variations?.[0]?.itemVariationData
-                            ?.sku || "",
-                    imageIds: item.itemData?.imageIds || [],
-                    productType: item.itemData?.productType || "",
-                });
-            });
-        } else {
-            others.push(item);
-        }
-    });
+    const { categories, items, others } =
+        squareService.mapCatalogObjects(objects);
 
     res.json({
         categories,

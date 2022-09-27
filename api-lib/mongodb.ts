@@ -23,6 +23,14 @@ async function createIndexes(client: MongoClient) {
         db
             .collection("users")
             .createIndexes([{ key: { email: 1 }, unique: true }]),
+
+        db
+            .collection("items")
+            .createIndexes([
+                { key: { variationId: 1 }, unique: true },
+                { key: { itemId: 1 }, unique: false },
+                { key: { categoryId: 1 } },
+            ]),
     ]);
     indexesCreated = true;
     return client;
