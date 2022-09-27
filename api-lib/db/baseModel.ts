@@ -24,7 +24,6 @@ export default class BaseModel<
     }
 
     getCollection() {
-        console.log("getting collection", this.collectionName, "from", this);
         return this.db.collection<D>(this.collectionName);
     }
 
