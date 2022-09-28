@@ -5,13 +5,11 @@ import apiClient from "../services/apiClient";
 import AdminService from "../services/adminService";
 
 export type LoginProps = {
-    setErrors: (errors: string[]) => void;
     email: string;
     password: string;
 };
 
 export type RegisterProps = {
-    setErrors: (errors: string[]) => void;
     email: string;
     password: string;
     name: string;
@@ -46,22 +44,10 @@ const useAdminState = () => {
         }
     );
 
-    const login = async ({
-        setErrors,
-        ...props
-    }: LoginProps): Promise<void> => {
-        setErrors([]);
-
-        return adminService
-            .login(props.email, props.password)
-            .then((admin) => {
-                queryClient.setQueryData("admin", admin);
-            })
-            .catch((error) => {
-                if (error instanceof ApiError) {
-                    setErrors([error.message]);
-                }
-            });
+    const login = async ({ ...props }: LoginProps): Promise<void> => {
+        return adminService.login(props.email, props.password).then((admin) => {
+            queryClient.setQueryData("admin", admin);
+        });
     };
 
     const logout = async () => {

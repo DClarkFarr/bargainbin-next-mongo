@@ -14,23 +14,21 @@ handler.use(...auths);
 /**
  * Login
  */
-handler.post(
-    async (req: NextApiRequest & { user: {} } & { session: Session }, res) => {
-        const userModel = await UserModel.factory();
+handler.post(async (req: NextApiRequest & { session: Session }, res) => {
+    const userModel = await UserModel.factory();
 
-        const user = await userModel.findWithEmailAndPassword(
-            req.body.email,
-            req.body.password
-        );
+    const user = await userModel.findWithEmailAndPassword(
+        req.body.email,
+        req.body.password
+    );
 
-        if (user) {
-            req.session.user = user;
-            return res.status(200).json({ user });
-        } else {
-            return res.status(404).json({ message: "Email/Password invalid" });
-        }
+    if (user) {
+        req.session.user = user;
+        return res.status(200).json({ user });
+    } else {
+        return res.status(401).json({ message: "Email/Password invalid" });
     }
-);
+});
 
 /**
  * Logout
