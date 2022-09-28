@@ -59,7 +59,7 @@ const useUserState = () => {
     };
 
     const logout = async () => {
-        await apiClient.post("/logout");
+        await userService.logout();
 
         queryClient.setQueryData("user", { user: null, favorites: [] });
         queryClient.invalidateQueries("cart");
