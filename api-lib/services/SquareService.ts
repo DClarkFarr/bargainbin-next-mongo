@@ -150,13 +150,12 @@ export default class SquareService {
     async syncItems(items: SquareItem[], images: SquareImage[]) {
         const keyedImages = keyBy(images, "id");
 
-        console.log("image id keys", Object.keys(keyedImages));
-
         const results: {
             variationId: string;
             name: string;
             action: "create" | "update" | "error";
             message?: string;
+            hasBeenUpdated?: boolean;
         }[] = [];
 
         const itemModel = await ItemModel.factory();
@@ -182,7 +181,6 @@ export default class SquareService {
                 syncedAt: DateTime.now().toJSDate(),
             };
 
-            console.log("existing", !!existingItem);
             if (existingItem) {
                 if (
                     item.imageIds.join(",") !== existingItem.imageIds.join(",")
@@ -203,18 +201,27 @@ export default class SquareService {
                         images,
                     } as ItemUpdateableWithImages;
                 }
-                await itemModel.collection.updateOne(
-                    {
-                        _id: existingItem._id,
-                    },
-                    {
-                        $set: toSet,
-                    }
-                );
+
+                const hasBeenUpdated =
+                    DateTime.fromJSDate(toSet.squareUpdatedAt) >
+                    DateTime.fromJSDate(existingItem.squareUpdatedAt);
+
+                if (hasBeenUpdated) {
+                    await itemModel.collection.updateOne(
+                        {
+                            _id: existingItem._id,
+                        },
+                        {
+                            $set: toSet,
+                        }
+                    );
+                }
+
                 results.push({
                     name: item.name,
                     variationId: item.variationId,
                     action: "update",
+                    hasBeenUpdated,
                 });
             } else {
                 try {
