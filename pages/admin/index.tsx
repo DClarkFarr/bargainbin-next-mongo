@@ -5,16 +5,6 @@ import AdminLayout from "../../components/Layouts/AdminLayout";
 import useAdminState from "../../hooks/useAdminState";
 
 const AdminDashboard: NextPage = () => {
-    const { isLoading, admin } = useAdminState();
-    const router = useRouter();
-
-    useEffect(() => {
-        if (!isLoading && !admin) {
-            router.push("/admin/login");
-        }
-        // eslint-disable-next-line
-    }, [isLoading]);
-
     return <AdminLayout>Dashboard Content</AdminLayout>;
 };
 

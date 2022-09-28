@@ -33,8 +33,8 @@ handler.post(async (req: NextApiRequest & { session: Session }, res) => {
 /**
  * Logout
  */
-handler.delete(async (req: NextApiRequest & { session: SessionStore }, res) => {
-    await req.session.destroy("");
+handler.delete(async (req: NextApiRequest & { session: Session }, res) => {
+    await req.session.destroy();
     res.status(204).end();
 });
 

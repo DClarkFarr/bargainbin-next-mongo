@@ -8,7 +8,7 @@ import {
     faTags,
     faUser,
 } from "@fortawesome/pro-solid-svg-icons";
-import { Admin } from "../../../types/User";
+import { Admin } from "../../../types/Admin";
 import NavItem from "./NavItem";
 
 export type AdminSidebarProps = {
@@ -25,7 +25,6 @@ const AdminSidebar = ({ admin, onLogout }: AdminSidebarProps) => {
                 <>
                     <div className="sidebar__profile text-center p-4 mb-10">
                         <div className="text-lg mb-1">{admin.name}</div>
-                        <div className="font-bold">Role / {admin.role}</div>
                     </div>
                 </>
             )}

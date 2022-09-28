@@ -44,10 +44,18 @@ const useAdminState = () => {
         }
     );
 
-    const login = async ({ ...props }: LoginProps): Promise<void> => {
+    const login = async (props: LoginProps): Promise<void> => {
         return adminService.login(props.email, props.password).then((admin) => {
             queryClient.setQueryData("admin", admin);
         });
+    };
+
+    const register = async (props: RegisterProps): Promise<void> => {
+        return adminService
+            .register(props.name, props.email, props.password)
+            .then((admin) => {
+                queryClient.setQueryData("admin", admin);
+            });
     };
 
     const logout = async () => {
@@ -59,6 +67,7 @@ const useAdminState = () => {
     return {
         admin,
         login,
+        register,
         logout,
         refetch,
         error,

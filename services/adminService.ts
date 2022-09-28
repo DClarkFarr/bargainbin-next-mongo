@@ -15,6 +15,15 @@ class AdminService extends ServerService {
     logout() {
         return this.client.delete("/admin/auth", {}).then(() => {});
     }
+    register(name: string, email: string, password: string) {
+        return this.client
+            .put<{ admin: Admin }>("/admin/auth", {
+                name,
+                email,
+                password,
+            })
+            .then((res) => res.admin);
+    }
 }
 
 export default AdminService;
