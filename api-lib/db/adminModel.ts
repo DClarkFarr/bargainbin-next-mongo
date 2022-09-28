@@ -6,32 +6,32 @@ import BaseModel from "./baseModel";
 
 type WithPassword<D extends Document = Document> = D & { password: string };
 
-export interface UserDocument extends Document {
+export interface AdminDocument extends Document {
     name: string;
     email: string;
     emailVerified: boolean;
     profilePicture: string | null;
 }
 
-type UserProjectionPresets = "auth" | "default";
+type AdminProjectionPresets = "auth" | "default";
 
-export type UserUpdateable = Partial<
-    Pick<UserDocument, "name" | "profilePicture">
+export type AdminUpdateable = Partial<
+    Pick<AdminDocument, "name" | "profilePicture">
 >;
 
-export type UserCreateable = WithPassword<
-    Pick<UserDocument, "name" | "email">
+export type AdminCreateable = WithPassword<
+    Pick<AdminDocument, "name" | "email">
 > &
-    Partial<Pick<UserDocument, "emailVerified" | "profilePicture">>;
+    Partial<Pick<AdminDocument, "emailVerified" | "profilePicture">>;
 
-class UserModel extends BaseModel<
-    UserDocument,
-    UserProjectionPresets,
-    UserUpdateable
+class AdminModel extends BaseModel<
+    AdminDocument,
+    AdminProjectionPresets,
+    AdminUpdateable
 > {
     constructor(db: Db) {
         super(db);
-        this.collectionName = "users";
+        this.collectionName = "admins";
         this.collection = this.getCollection();
     }
 
@@ -42,7 +42,7 @@ class UserModel extends BaseModel<
 
     getProjection(
         obj: FindOptions["projection"] = {},
-        preset?: UserProjectionPresets
+        preset?: AdminProjectionPresets
     ) {
         if (preset) {
             switch (preset) {
@@ -66,8 +66,8 @@ class UserModel extends BaseModel<
 
     async findByEmail(
         email: string,
-        options: FindOptions<UserDocument> & {
-            preset?: UserProjectionPresets;
+        options: FindOptions<AdminDocument> & {
+            preset?: AdminProjectionPresets;
         } = {}
     ) {
         const normEmail = normalizeEmail(email);
@@ -79,12 +79,12 @@ class UserModel extends BaseModel<
     }
 
     async findWithEmailAndPassword(email: string, password: string) {
-        const user = (await this.findByEmail(email, {
+        const admin = (await this.findByEmail(email, {
             preset: "auth",
-        })) as WithPassword<WithId<UserDocument>>;
+        })) as WithPassword<WithId<AdminDocument>>;
 
-        if (user && (await bcrypt.compare(password, user.password))) {
-            return this.toArray(user); // filtered out password
+        if (admin && (await bcrypt.compare(password, admin.password))) {
+            return this.toArray(admin); // filtered out password
         }
         return null;
     }
@@ -95,7 +95,7 @@ class UserModel extends BaseModel<
         name,
         profilePicture = null,
         emailVerified = false,
-    }: UserCreateable): Promise<WithId<UserDocument>> {
+    }: AdminCreateable): Promise<WithId<AdminDocument>> {
         const emailNorm = normalizeEmail(email);
         if (!emailNorm) {
             throw new Error("Failed to normalize email");
@@ -124,10 +124,10 @@ class UserModel extends BaseModel<
         oldPassword: string,
         newPassword: string
     ) {
-        const user = await this.findOne(new ObjectId(id));
-        if (!user) return false;
+        const admin = await this.findOne(new ObjectId(id));
+        if (!admin) return false;
 
-        const matched = await bcrypt.compare(oldPassword, user.password);
+        const matched = await bcrypt.compare(oldPassword, admin.password);
         if (!matched) return false;
 
         const password = await bcrypt.hash(newPassword, 10);
@@ -147,21 +147,13 @@ class UserModel extends BaseModel<
         );
     }
 
-    toArray(d: WithId<UserDocument>) {
+    toArray(d: WithId<AdminDocument>) {
         const obj = { ...d };
 
         delete obj.password;
 
-        return obj as WithId<UserDocument>;
+        return obj as WithId<AdminDocument>;
     }
 }
 
-export default UserModel;
-
-export function dbProjectionUsers(prefix = "") {
-    return {
-        [`${prefix}password`]: 0,
-        [`${prefix}email`]: 0,
-        [`${prefix}emailVerified`]: 0,
-    };
-}
+export default AdminModel;

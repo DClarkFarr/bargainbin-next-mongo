@@ -47,9 +47,6 @@ export default class BaseModel<
 
     toArray(d: WithId<Document>) {
         const obj = { ...d };
-
-        delete obj.password;
-
         return obj as WithId<D>;
     }
 
