@@ -20,6 +20,8 @@ import {
 import { toSlug } from "methods/url";
 
 import { keyBy } from "lodash";
+import CategoryModel, { CategoryUpdateable } from "../db/categoryModel";
+import { ObjectId } from "mongodb";
 
 export default class SquareService {
     async fetchCatalogObjects() {
@@ -140,11 +142,74 @@ export default class SquareService {
             this.mapCatalogObjects(objects);
 
         const itemResults = await this.syncItems(items, images);
+        const categoryResults = await this.syncCategories(categories, images);
 
         return {
             items: itemResults,
+            categories: categoryResults,
             others,
         };
+    }
+
+    async syncCategories(categories: SquareCategory[], images: SquareImage[]) {
+        const results: {
+            name: string;
+            action: "create" | "update" | "error";
+            hasBeenUpdated?: boolean;
+        }[] = [];
+
+        const categoryModel = await CategoryModel.factory();
+
+        const promises = categories.map(async (category) => {
+            const existing = await categoryModel.findByCategoryId(category.id);
+
+            const toSet: CategoryUpdateable = {
+                id: category.id,
+                name: category.name,
+                slug: category.slug,
+                squareUpdatedAt: DateTime.fromISO(
+                    category.updatedAt
+                ).toJSDate(),
+                syncedAt: DateTime.now().toJSDate(),
+            };
+
+            if (existing) {
+                const hasBeenUpdated =
+                    DateTime.fromJSDate(toSet.squareUpdatedAt) >
+                    DateTime.fromJSDate(existing.squareUpdatedAt);
+
+                if (hasBeenUpdated) {
+                    await categoryModel.collection.updateOne(
+                        {
+                            _id: existing._id,
+                        },
+                        {
+                            $set: toSet,
+                        }
+                    );
+                }
+
+                results.push({
+                    name: category.name,
+                    action: "update",
+                    hasBeenUpdated,
+                });
+            } else {
+                await categoryModel.collection.insertOne({
+                    ...toSet,
+                    createdAt: DateTime.now().toJSDate(),
+                });
+
+                results.push({
+                    name: category.name,
+                    action: "create",
+                });
+            }
+        });
+
+        await Promise.all(promises);
+
+        return results;
     }
 
     async syncItems(items: SquareItem[], images: SquareImage[]) {
