@@ -38,7 +38,6 @@ export default class SquareService {
             objects.push(...(result.objects || []));
 
             while (result.cursor) {
-                console.log("querying cursor", result.cursor);
                 result = (
                     await catalogApi.listCatalog(
                         result.cursor,
@@ -50,7 +49,7 @@ export default class SquareService {
         } catch (error) {
             if (error instanceof ApiError) {
                 const errors = error.result;
-                console.log("error loading catalog", errors);
+                console.warn("error loading catalog", errors);
                 // const { statusCode, headers } = error;
             }
         }
@@ -258,8 +257,6 @@ export default class SquareService {
                         }
                         return acc;
                     }, [] as SquareImage[]);
-
-                    console.log("got", item.imageIds, "from", images);
 
                     toSet = {
                         ...toSet,
