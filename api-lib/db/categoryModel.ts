@@ -9,6 +9,8 @@ export interface CategoryDocument {
     squareUpdatedAt: Date;
     createdAt: Date;
     syncedAt: Date;
+    menuOrder: number;
+    showOnMenu: boolean;
 }
 
 type CategoryProjectionPresets = "default";

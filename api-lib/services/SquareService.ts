@@ -159,18 +159,19 @@ export default class SquareService {
 
         const categoryModel = await CategoryModel.factory();
 
-        const promises = categories.map(async (category) => {
+        const promises = categories.map(async (category, i) => {
             const existing = await categoryModel.findByCategoryId(category.id);
 
-            const toSet: CategoryUpdateable = {
-                id: category.id,
-                name: category.name,
-                slug: category.slug,
-                squareUpdatedAt: DateTime.fromISO(
-                    category.updatedAt
-                ).toJSDate(),
-                syncedAt: DateTime.now().toJSDate(),
-            };
+            const toSet: Omit<CategoryUpdateable, "menuOrder" | "showOnMenu"> =
+                {
+                    id: category.id,
+                    name: category.name,
+                    slug: category.slug,
+                    squareUpdatedAt: DateTime.fromISO(
+                        category.updatedAt
+                    ).toJSDate(),
+                    syncedAt: DateTime.now().toJSDate(),
+                };
 
             if (existing) {
                 const hasBeenUpdated =
@@ -197,6 +198,8 @@ export default class SquareService {
                 await categoryModel.collection.insertOne({
                     ...toSet,
                     createdAt: DateTime.now().toJSDate(),
+                    showOnMenu: true,
+                    menuOrder: i,
                 });
 
                 results.push({
