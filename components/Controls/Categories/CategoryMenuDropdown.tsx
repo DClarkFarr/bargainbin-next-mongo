@@ -8,6 +8,7 @@ import styled from "styled-components";
 import Link from "next/link";
 import useWindowSize from "../../../hooks/useWindowResize";
 import { Category } from "../../../types/Category";
+import useSiteState from "@/hooks/useSiteState";
 
 const StyledDropdownTitle = styled.div`
     .dropdown__heading {
@@ -24,7 +25,7 @@ const StyledDropdownTitle = styled.div`
 `;
 
 const CategoryMenuDropdown = () => {
-    const categories: Category[] = [];
+    const { categories } = useSiteState();
 
     const DropdownTitle = (props: DropdownTitleProps) => (
         <StyledDropdownTitle>

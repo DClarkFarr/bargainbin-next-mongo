@@ -44,4 +44,29 @@ export default class CategoryModel extends BaseModel<
             options
         );
     }
+
+    async getSiteCategories() {
+        return (
+            await this.collection
+                .find(
+                    {
+                        showOnMenu: true,
+                    },
+                    {
+                        sort: {
+                            menuOrder: 1,
+                        },
+                    }
+                )
+                .toArray()
+        ).map(({ _id, ...c }) => {
+            return {
+                ...c,
+                id: _id.toString(),
+                squareUpdatedAt: c.squareUpdatedAt.toISOString(),
+                createdAt: c.createdAt.toISOString(),
+                syncedAt: c.syncedAt.toISOString(),
+            };
+        });
+    }
 }

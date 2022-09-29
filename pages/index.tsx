@@ -3,27 +3,32 @@ import "../styles/Home.module.scss";
 
 import DefaultLayout from "../components/Layouts/Default";
 import MetaHead from "../components/Layouts/MetaHead";
+import CategoryModel from "@/api-lib/db/categoryModel";
+import useSiteState from "hooks/useSiteState";
+import { Category } from "@/types/Category";
 
 const Home: NextPage<{
-    serverMessage: string;
-    staticMessage: string;
-}> = (props) => {
+    categories: Category<string>[];
+}> = ({ categories }) => {
+    const site = useSiteState();
+
+    site.setCategories(categories);
     return (
         <DefaultLayout>
             <MetaHead title="Home | [base]"></MetaHead>
             <div className="page">
                 <h1>Home Page</h1>
-                <p>server: {props.serverMessage}</p>
-                <p>static: {props.staticMessage}</p>
             </div>
         </DefaultLayout>
     );
 };
 
 export const getStaticProps: GetStaticProps = async (context) => {
+    const categoryModel = await CategoryModel.factory();
+    const categories = await categoryModel.getSiteCategories();
     return {
         props: {
-            staticMessage: "this is from the static",
+            categories,
         },
     };
 };
