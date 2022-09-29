@@ -30,6 +30,7 @@ export const getStaticProps: GetStaticProps = async (context) => {
         props: {
             categories,
         },
+        revalidate: 300, // seconds
     };
 };
 
