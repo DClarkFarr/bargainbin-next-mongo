@@ -1,5 +1,12 @@
-export type Category = {
+import { DateTime } from "luxon";
+
+export type Category<D = DateTime> = {
     id: string;
-    slug: string;
     name: string;
+    slug: string;
+    squareUpdatedAt: D;
+    createdAt: D;
+    syncedAt: D;
+    menuOrder: number;
+    showOnMenu: boolean;
 };

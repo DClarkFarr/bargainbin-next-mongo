@@ -1,3 +1,4 @@
+import { Category } from "@/types/Category";
 import { Admin } from "../types/Admin";
 import ServerService from "./ServerService";
 
@@ -23,6 +24,25 @@ class AdminService extends ServerService {
                 password,
             })
             .then((res) => res.admin);
+    }
+
+    updateCategorySorts(categoryIds: string[]) {
+        return this.client
+            .post("/admin/categories/sort", { categoryIds })
+            .then(() => {});
+    }
+    updateCategory(
+        id: string,
+        toUpdate: Partial<
+            Omit<Category, "id" | "createdAt" | "syncedAt" | "squareUpdatedAt">
+        >
+    ) {
+        return this.client
+            .put<{ category: Category<Date> }>(
+                `/admin/categories/${id}`,
+                toUpdate
+            )
+            .then(({ category }) => category);
     }
 }
 
