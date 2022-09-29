@@ -66,7 +66,7 @@ const useUserState = () => {
     };
 
     return {
-        user: data?.user || null,
+        user: data || null,
         login,
         logout,
         register,

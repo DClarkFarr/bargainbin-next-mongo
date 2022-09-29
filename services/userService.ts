@@ -12,13 +12,13 @@ class UserService extends ServerService {
         return this.client.post("/user", { name, email, password });
     }
     getAuthedUser() {
-        return this.client.get<null, { user: User }>("/user");
+        return this.client.get<{ user: User }>("/user").then((res) => res.user);
     }
     newsletterSignup(token: string, email: string) {
-        return this.client.post<
-            { token: string; email: string },
-            { success: boolean; cache: boolean }
-        >(`/user/newsletter`, { token, email });
+        return this.client.post<{ success: boolean; cache: boolean }>(
+            `/user/newsletter`,
+            { token, email }
+        );
     }
 }
 
