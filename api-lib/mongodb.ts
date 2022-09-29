@@ -34,7 +34,10 @@ async function createIndexes(client: MongoClient) {
 
         db
             .collection("categories")
-            .createIndexes([{ key: { id: 1 }, unique: true }]),
+            .createIndexes([
+                { key: { id: 1 }, unique: true },
+                { key: { showOnMenu: -1 } },
+            ]),
     ]);
     indexesCreated = true;
     return client;
