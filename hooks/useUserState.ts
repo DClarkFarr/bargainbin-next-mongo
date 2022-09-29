@@ -31,13 +31,10 @@ const useUserState = () => {
             refetchOnWindowFocus: false,
             retry: false,
             onError(err: ApiError) {
-                if (err.status === 401) {
-                    return queryClient.setQueryData("user", {
-                        user: null,
-                        favorites: [],
-                    });
-                }
-                throw err;
+                return queryClient.setQueryData("user", {
+                    user: null,
+                    favorites: [],
+                });
             },
         }
     );

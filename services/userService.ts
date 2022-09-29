@@ -11,7 +11,7 @@ class UserService extends ServerService {
     register(name: string, email: string, password: string): Promise<User> {
         return this.client.post("/user", { name, email, password });
     }
-    getAuthedUser() {
+    async getAuthedUser() {
         return this.client.get<{ user: User }>("/user").then((res) => res.user);
     }
     newsletterSignup(token: string, email: string) {

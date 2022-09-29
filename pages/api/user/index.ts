@@ -41,7 +41,7 @@ handler.get(
         res: NextApiResponse
     ) => {
         if (!req.session.user) {
-            return res.json(null);
+            return res.json({ user: null });
         }
         return res.json({ user: req.session.user });
     }
