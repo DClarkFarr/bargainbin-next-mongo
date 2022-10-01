@@ -1,7 +1,7 @@
 import { Category } from "@/types/Category";
 import { useState } from "react";
 import AdminService from "@/services/adminService";
-import CategoryListItem from "./CategoryListItem";
+import CategoryListItem from "./ListItem";
 
 const adminService = new AdminService({});
 

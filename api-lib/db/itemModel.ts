@@ -6,7 +6,6 @@ import BaseModel from "./baseModel";
 export interface ItemDocument {
     itemId: string;
     variationId: string;
-    squareUpdatedAt: Date;
     name: string;
     slug: string;
     description: string;
@@ -18,11 +17,20 @@ export interface ItemDocument {
     imageIds: string[];
     createdAt: Date;
     syncedAt: Date;
+    squareUpdatedAt: Date;
+    isClearance: boolean;
+    isFeatured: boolean;
 }
 
 type ItemProjectionPresets = "default";
 
-export type ItemUpdateable = Omit<ItemDocument, "createdAt" | "images">;
+export type ItemUpdateable = Omit<
+    ItemDocument,
+    "createdAt" | "images" | "isClearance" | "isFeatured"
+> & {
+    isClearance?: boolean;
+    isFeatured?: boolean;
+};
 export type ItemUpdateableWithImages = ItemUpdateable & {
     images: SquareImage[];
 };

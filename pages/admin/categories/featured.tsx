@@ -1,12 +1,11 @@
-import CategoryModel from "@/api-lib/db/categoryModel";
-import AdminCategoryList from "@/components/Admin/Category/List";
-import AdminLayout from "@/components/Layouts/AdminLayout";
-import AdminCategoryPageTabs from "@/components/Admin/Category/PageTabs";
-import { DateTime } from "luxon";
 import { NextPage } from "next";
-import { Category } from "../../../types/Category";
+import AdminCategoryPageTabs from "@/components/Admin/Category/PageTabs";
+import AdminLayout from "@/components/Layouts/AdminLayout";
+import CategoryModel from "@/api-lib/db/categoryModel";
+import { Category } from "@/types/Category";
+import { DateTime } from "luxon";
 
-const CategoriesPage: NextPage<{
+const AssignFeaturedPage: NextPage<{
     categories: Category<string>[];
 }> = ({ categories: dbCategories }) => {
     const categories = dbCategories.map((category) => {
@@ -17,14 +16,12 @@ const CategoriesPage: NextPage<{
             syncedAt: DateTime.fromISO(category.syncedAt),
         };
     });
+
     return (
         <AdminLayout>
-            <div className="categories-page">
-                <h1 className="font-semibold text-2xl mb-4">Categories</h1>
-                <div className="mb-6">
-                    <AdminCategoryPageTabs tab="list" />
-                </div>
-                <AdminCategoryList categories={categories} />
+            <h1 className="font-semibold text-2xl mb-4">Categories</h1>
+            <div className="mb-6">
+                <AdminCategoryPageTabs tab="featured" />
             </div>
         </AdminLayout>
     );
@@ -61,4 +58,4 @@ export const getServerSideProps = async () => {
     };
 };
 
-export default CategoriesPage;
+export default AssignFeaturedPage;

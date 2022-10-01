@@ -88,23 +88,9 @@ const DefaultHeader = () => {
                     </Link>
                 </div>
                 <div>
-                    <Link href="/category/treasure-hunt">
-                        <a className="mobile-menu__item hover:underline px-2">
-                            Treasure Hunt
-                        </a>
-                    </Link>
-                </div>
-                <div>
                     <Link href="/category/new-arrivals">
                         <a className="mobile-menu__item hover:underline px-2">
                             New Arrivals
-                        </a>
-                    </Link>
-                </div>
-                <div>
-                    <Link href="/category/bulk">
-                        <a className="mobile-menu__item hover:underline px-2">
-                            Bulk
                         </a>
                     </Link>
                 </div>

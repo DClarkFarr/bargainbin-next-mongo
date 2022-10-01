@@ -4,24 +4,17 @@ import {
     SquareItem,
 } from "../../types/SquareTypes";
 import ItemModel, {
-    ItemDocument,
     ItemUpdateable,
     ItemUpdateableWithImages,
 } from "../db/itemModel";
 import { DateTime } from "luxon";
 
 import squareClient from "@/api-lib/squareClient";
-import {
-    ApiError,
-    CatalogImage,
-    CatalogObject,
-    ListCatalogResponse,
-} from "square";
+import { ApiError, CatalogObject, ListCatalogResponse } from "square";
 import { toSlug } from "methods/url";
 
 import { keyBy } from "lodash";
 import CategoryModel, { CategoryUpdateable } from "../db/categoryModel";
-import { ObjectId } from "mongodb";
 
 export default class SquareService {
     async fetchCatalogObjects() {
@@ -307,6 +300,8 @@ export default class SquareService {
                     await itemModel.collection.insertOne({
                         ...toSet,
                         createdAt: DateTime.now().toJSDate(),
+                        isFeatured: false,
+                        isClearance: false,
                     });
                     results.push({
                         name: item.name,
