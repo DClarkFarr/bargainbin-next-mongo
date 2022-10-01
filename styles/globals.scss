@@ -16,6 +16,10 @@
         @apply inline-block px-4 py-2 text-white rounded cursor-pointer disabled:cursor-not-allowed;
     }
 
+    .btn-sm {
+        @apply px-2 py-1;
+    }
+
     .form-group {
         @apply mb-3;
 

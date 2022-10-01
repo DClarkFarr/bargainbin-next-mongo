@@ -1,6 +1,6 @@
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { solid } from "@fortawesome/fontawesome-svg-core/import.macro";
 
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ChangeEvent, KeyboardEvent, useState } from "react";
 
 const SearchBar = ({
